@@ -1,0 +1,31 @@
+{% extends "optimasi/base.html" %}
+{% block judul %}Riwayat Optimasi{% endblock %}
+{% block isi %}
+<h1>Riwayat Optimasi</h1>
+<p class="sub">50 optimasi terakhir yang tersimpan di database.</p>
+<section class="card">
+  {% if daftar %}
+  <div class="tabel-scroll">
+    <table>
+      <tr>
+        <th>Waktu</th><th class="num">Budget (jt)</th><th class="num">Biaya (jt)</th>
+        <th class="num">Performa</th><th class="num">Optimum BF</th><th>GA = BF?</th><th></th>
+      </tr>
+      {% for h in daftar %}
+      <tr>
+        <td>{{ h.dibuat|date:"d M Y H:i" }}</td>
+        <td class="num">{{ h.budget|floatformat:1 }}</td>
+        <td class="num">{{ h.total_biaya|floatformat:1 }}</td>
+        <td class="num">{{ h.total_nilai }}</td>
+        <td class="num">{% if h.optimum_bf is not None %}{{ h.optimum_bf }}{% else %}-{% endif %}</td>
+        <td>{% if h.cocok_bf is None %}-{% elif h.cocok_bf %}<span class="ok">Ya</span>{% else %}<span class="bad">Tidak</span>{% endif %}</td>
+        <td><a class="link" href="{% url 'hasil' h.pk %}">Detail</a></td>
+      </tr>
+      {% endfor %}
+    </table>
+  </div>
+  {% else %}
+  <p>Belum ada riwayat. <a class="link" href="{% url 'index' %}">Jalankan optimasi pertama.</a></p>
+  {% endif %}
+</section>
+{% endblock %}

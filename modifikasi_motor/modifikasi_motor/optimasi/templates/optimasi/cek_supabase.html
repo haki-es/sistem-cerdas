@@ -1,0 +1,35 @@
+{% extends "optimasi/base.html" %}
+{% block judul %}Cek Koneksi Supabase{% endblock %}
+{% block isi %}
+<h1>Cek Koneksi Supabase API</h1>
+<p class="sub">Membaca tabel <code>optimasi_part</code> lewat Data API memakai API key, bukan lewat koneksi database Django.</p>
+
+{% if not url_diisi %}
+<section class="card">
+  <p class="bad">SUPABASE_URL belum diisi di file <code>.env</code>.</p>
+  <p class="help">Isi <code>SUPABASE_URL</code>, <code>SUPABASE_PUBLISHABLE_KEY</code>, dan <code>SUPABASE_SECRET_KEY</code>, lalu jalankan ulang server.</p>
+</section>
+{% else %}
+<p class="help">Project: {{ url }}</p>
+<div class="grid">
+  {% for c in hasil_cek %}
+  <section class="card">
+    <h2>{{ c.label }}</h2>
+    {% if not c.diisi %}
+      <p class="bad">Key belum diisi di <code>.env</code>.</p>
+    {% elif c.ok %}
+      <p class="ok">Tersambung ✔ ({{ c.jumlah }} baris terbaca)</p>
+      {% if c.jumlah == 0 %}
+        <p class="help">Hasil kosong. Kalau tabel sudah ada isinya, ini tandanya Row Level Security aktif dan key publik tidak punya izin baca. Itu normal dan aman.</p>
+      {% else %}
+        <pre style="overflow-x:auto;background:#f1f5f9;padding:10px;border-radius:8px;font-size:.8rem">{{ c.json }}</pre>
+      {% endif %}
+    {% else %}
+      <p class="bad">Gagal</p>
+      <pre style="white-space:pre-wrap;font-size:.8rem">{{ c.galat }}</pre>
+    {% endif %}
+  </section>
+  {% endfor %}
+</div>
+{% endif %}
+{% endblock %}

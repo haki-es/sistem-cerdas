@@ -1,0 +1,90 @@
+{% extends "optimasi/base.html" %}
+{% block judul %}Hasil Optimasi #{{ hasil.pk }}{% endblock %}
+{% block isi %}
+<h1>Hasil Optimasi #{{ hasil.pk }}</h1>
+<p class="sub">
+  {{ hasil.dibuat|date:"d M Y H:i" }} · {{ hasil.jumlah_kandidat }} part kandidat ·
+  populasi {{ hasil.ukuran_populasi }} · {{ hasil.generasi }} generasi · mutasi {{ hasil.peluang_mutasi }}
+</p>
+
+<div class="stat">
+  <div><b>{{ hasil.total_nilai }}</b><span>Total poin performa</span></div>
+  <div><b>Rp {{ hasil.total_biaya|floatformat:1 }} jt</b><span>Total biaya dari budget Rp {{ hasil.budget|floatformat:1 }} jt</span></div>
+  <div><b>Rp {{ hasil.sisa_budget|floatformat:1 }} jt</b><span>Sisa budget</span></div>
+  {% if hasil.batas_bobot is not None %}
+  <div><b>{{ hasil.total_bobot|floatformat:1 }} kg</b><span>Tambahan bobot (maks {{ hasil.batas_bobot|floatformat:1 }} kg)</span></div>
+  {% endif %}
+</div>
+
+<section class="card" style="margin-bottom:20px">
+  <h2>Part yang dipasang</h2>
+  {% if hasil.part_terpilih %}
+  <div class="tabel-scroll">
+    <table>
+      <tr><th>Part</th><th class="num">Biaya (jt)</th><th class="num">Performa</th></tr>
+      {% for p in hasil.part_terpilih %}
+      <tr><td>{{ p.nama }}</td><td class="num">{{ p.biaya|floatformat:1 }}</td><td class="num">{{ p.nilai }}</td></tr>
+      {% endfor %}
+    </table>
+  </div>
+  {% else %}
+  <p>Tidak ada part yang muat dalam batas yang ditentukan.</p>
+  {% endif %}
+</section>
+
+<section class="card" style="margin-bottom:20px">
+  <h2>GA vs brute force</h2>
+  {% if hasil.optimum_bf is not None %}
+    <p>Optimum brute force: <b>{{ hasil.optimum_bf }}</b> · Hasil GA: <b>{{ hasil.total_nilai }}</b> ·
+    {% if hasil.cocok_bf %}<span class="ok">GA menemukan optimum ✔</span>{% else %}<span class="bad">GA belum mencapai optimum</span>{% endif %}</p>
+    {% if not hasil.cocok_bf %}<p class="help">Wajar: GA tidak menjamin optimum. Coba tambah generasi atau ukuran populasi.</p>{% endif %}
+  {% else %}
+    <p class="help">Perbandingan brute force tidak dijalankan (dimatikan, atau part kandidat lebih dari 16).</p>
+  {% endif %}
+</section>
+
+<section class="card">
+  <h2>Kurva evolusi fitness</h2>
+  <canvas id="kurva" height="120"></canvas>
+</section>
+
+<section class="card" id="penjelasan" style="margin-top:20px">
+  <h2>Penjelasan AI (Gemini)</h2>
+  {% for m in messages %}<p class="bad">{{ m }}</p>{% endfor %}
+  {% if hasil.penjelasan_ai %}
+    <div>{{ hasil.penjelasan_ai|linebreaks }}</div>
+    <p class="help">Dihasilkan oleh Gemini dari data hasil optimasi ini.</p>
+  {% else %}
+    <p class="help">Klik tombol untuk meminta Gemini menjelaskan kurva dan hasil di atas.</p>
+  {% endif %}
+  <form method="post" action="{% url 'penjelasan_ai' hasil.pk %}">
+    {% csrf_token %}
+    <button type="submit">{% if hasil.penjelasan_ai %}Buat ulang penjelasan{% else %}Jelaskan dengan AI{% endif %}</button>
+  </form>
+</section>
+
+<p style="margin-top:20px"><a class="link" href="{% url 'index' %}">← Optimasi lagi</a> · <a class="link" href="{% url 'riwayat' %}">Lihat riwayat</a></p>
+
+{{ hasil.riwayat_fitness|json_script:"data-riwayat" }}
+{{ hasil.optimum_bf|json_script:"data-optimum" }}
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<script>
+  const riwayat = JSON.parse(document.getElementById("data-riwayat").textContent);
+  const optimum = JSON.parse(document.getElementById("data-optimum").textContent);
+  const datasets = [{ label: "Fitness terbaik GA", data: riwayat, borderColor: "#1d4ed8", tension: 0.2, pointRadius: 2 }];
+  if (optimum !== null) {
+    datasets.push({ label: "Optimum brute force", data: riwayat.map(() => optimum), borderColor: "#dc2626", borderDash: [6, 6], pointRadius: 0 });
+  }
+  new Chart(document.getElementById("kurva"), {
+    type: "line",
+    data: { labels: riwayat.map((_, i) => i + 1), datasets: datasets },
+    options: {
+      responsive: true,
+      scales: {
+        x: { title: { display: true, text: "generasi" } },
+        y: { title: { display: true, text: "fitness (poin performa)" } }
+      }
+    }
+  });
+</script>
+{% endblock %}

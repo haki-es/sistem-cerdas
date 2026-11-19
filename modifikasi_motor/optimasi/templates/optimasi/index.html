@@ -1,0 +1,41 @@
+{% extends "optimasi/base.html" %}
+{% block isi %}
+<h1>Optimasi Modifikasi Motor Sport</h1>
+<p class="sub">Cari kombinasi part dengan total performa tertinggi tanpa melebihi budget, memakai algoritma genetika.</p>
+
+<div class="grid">
+  <section class="card">
+    <h2>Atur optimasi</h2>
+    <form method="post">
+      {% csrf_token %}
+      {% for field in form %}
+        <div class="field">
+          <label for="{{ field.id_for_label }}">{{ field.label }}</label>
+          {{ field }}
+          {% if field.help_text %}<div class="help">{{ field.help_text }}</div>{% endif %}
+          {% for e in field.errors %}<div class="err">{{ e }}</div>{% endfor %}
+        </div>
+      {% endfor %}
+      <button type="submit">Jalankan optimasi</button>
+    </form>
+  </section>
+
+  <section class="card">
+    <h2>Daftar part tersedia</h2>
+    {% if daftar_part %}
+    <div class="tabel-scroll">
+      <table>
+        <tr><th>Part</th><th class="num">Biaya (jt)</th><th class="num">Performa</th></tr>
+        {% for p in daftar_part %}
+        <tr><td>{{ p.nama }}</td><td class="num">{{ p.biaya }}</td><td class="num">{{ p.nilai }}</td></tr>
+        {% endfor %}
+      </table>
+    </div>
+    <p class="help">Tambah atau ubah part lewat <a class="link" href="{% url 'admin:optimasi_part_changelist' %}">halaman admin</a>.</p>
+    {% else %}
+    <p>Belum ada data part. Jalankan <code>python manage.py seed_part</code> atau tambahkan lewat
+       <a class="link" href="{% url 'admin:optimasi_part_changelist' %}">halaman admin</a>.</p>
+    {% endif %}
+  </section>
+</div>
+{% endblock %}
